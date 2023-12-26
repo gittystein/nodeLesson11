@@ -1,10 +1,22 @@
-import { care } from "./routs/care.js";
+// import { care } from "./routs/care.js";
 import mongoose from "mongoose";
-import { Cares } from "./carsSchema.js";
+// import { Cares } from "./carsSchema.js";
+import { Care, CareValidator } from "../models/care.js";
 
 export const getAllCars = async (req, res) => {
+    let { search, name, price, campany } = req.query;
     try {
-        let allCars = await Cares.find({})
+        let allCars;
+        let searchObject = {};
+        if (!search)
+            searchObject.name = new RegExp(search, "i");
+        if (!price)
+            searchObject.price = price;
+        allCars = await Care.find(searchObject)
+            .sort({ name: -1, price: 1 })
+            .skilp(price - 1)
+            .limit((campany));
+
         res.json(allCars)
     }
     catch (err) {
@@ -46,16 +58,15 @@ export const deleteCare = async (req, res) => {
 
 export const addCare = async (req, res) => {
     let { name, price, campany } = req.body;
-    if (!name || !price || !campany)
-        return res.status(404).send("missing parameter")
-
+    let validate = CareValidator(req.body);
+    if (validate.err)
+        return res.status(404).send(validate.err[0])
     try {
         let sameCars = await Cares.find({ name, price, campany })
         if (sameCars.length > 0)
             return res.status(409).send("ther is a care whis this name and this price from this campany")
 
-        let newCare = Cares.create({ name, price, campany })
-        await newCare.save();
+        let newCare = await Cares.create({ name, price, campany })
 
         return res.status(201).json(newCare)
     }
@@ -86,10 +97,4 @@ export const updateCare = async (req, res) => {
 
 
 
-//public
-
-//git init
-//git add .
-//git commit שם
-//git push ".//הכתובת שלוקחים מגיטהב"
 
